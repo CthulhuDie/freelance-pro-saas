@@ -1,0 +1,78 @@
+:root {
+  --primary: #0070ba;
+  --dark: #1a1a2e;
+  --success: #28a745;
+  --gold: #d4a017;
+}
+
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background: #f0f2f5;
+  color: #333;
+  display: flex;
+  justify-content: center;
+  margin: 0;
+}
+
+.dashboard { width: 100%; max-width: 850px; margin: 40px 20px; }
+
+.main-header { text-align: center; margin-bottom: 30px; }
+
+.badge {
+  background: linear-gradient(90deg, #6200ea, #03dac6);
+  color: white;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+/* Tabs */
+.tabs { display: flex; gap: 10px; margin-bottom: -1px; }
+
+.tab-btn {
+  padding: 12px 20px;
+  border: 1px solid #ddd;
+  background: #e4e6eb;
+  cursor: pointer;
+  border-radius: 8px 8px 0 0;
+  font-weight: bold;
+}
+
+.tab-btn.active { background: white; border-bottom: none; color: var(--primary); }
+
+/* Card Principal */
+.display-card {
+  background: white;
+  padding: 30px;
+  border-radius: 0 12px 12px 12px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+  min-height: 300px;
+  border: 1px solid #ddd;
+}
+
+.hidden { display: none !important; }
+
+/* Herramientas Success Area */
+.tools-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px; }
+
+.tool-card { border: 1px solid #eee; padding: 15px; border-radius: 10px; background: #fafafa; }
+
+.calc-form input { width: 80%; padding: 8px; margin-bottom: 10px; border-radius: 4px; border: 1px dashed #ccc; }
+
+.res-box { background: #e7f3ff; padding: 10px; border-radius: 5px; margin-top: 10px; }
+
+/* Modal */
+.modal {
+  position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center;
+}
+
+.modal-content { background: white; padding: 30px; border-radius: 15px; width: 80%; max-width: 500px; position: relative; }
+
+.close-btn { position: absolute; right: 20px; top: 10px; font-size: 25px; cursor: pointer; }
+
+/* Roadmap */
+.roadmap { margin-top: 30px; background: white; padding: 20px; border-radius: 12px; border: 1px solid #ddd; }
+.roadmap-list { list-style: none; padding: 0; text-align: left; }
+.current { color: var(--primary); font-weight: bold; }
+.done { color: #888; text-decoration: line-through; }
