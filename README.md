@@ -21,7 +21,7 @@ Este proyecto es un **SaaS (Software as a Service)** diseñado para freelancers 
 - [ ] Persistencia de datos con Firebase.
 
 ## ✒️ Autor
-* **Tu Nombre** - [[https://www.linkedin.com/in/johnny-alcala-leones-73520b242/]
+* **Tu Nombre** - [Mi LinkedIn](https://www.linkedin.com/in/johnny-alcala-leones-73520b242/)
 
 ---
 *Este proyecto fue desarrollado como parte de un prototipo técnico para soluciones de IA y automatización.*
