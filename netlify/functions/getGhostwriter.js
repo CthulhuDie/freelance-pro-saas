@@ -15,7 +15,7 @@ exports.handler = async (event, context) => {
             body: JSON.stringify({
                 contents: [{ parts: [{ text: prompt }] }]
             })
-        });
+        });  
 
         const data = await response.json();
 
