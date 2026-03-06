@@ -1,4 +1,14 @@
 <!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Freelance Pro IA Engine</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://www.paypal.com/sdk/js?client-id=test&currency=USD"></script>
+</head>
+<body>
+
 <div class="dashboard">
   <header class="main-header">
     <h1>Freelance Pro <span class="badge">IA Engine</span></h1>
@@ -7,9 +17,9 @@
 
   <section class="course-container">
     <nav class="tabs">
-      <button class="tab-btn active" onclick="showTab('intro')">Inicio</button>
-      <button class="tab-btn" onclick="showTab('free')">Lección 1</button>
-      <button class="tab-btn premium-btn" onclick="showTab('pay')">Premium 🔒</button>
+      <button class="tab-btn active" onclick="showTab('intro', event)">Inicio</button>
+      <button class="tab-btn" onclick="showTab('free', event)">Lección 1</button>
+      <button class="tab-btn premium-btn" onclick="showTab('pay', event)">Premium 🔒</button>
     </nav>
 
     <div id="display-area" class="display-card">
@@ -40,7 +50,6 @@
 
       <div id="content-success" class="hidden">
         <h2 class="text-success">¡Acceso Total Concedido!</h2>
-        <p>Usa estas herramientas exclusivas para potenciar tu carrera:</p>
         
         <div class="tools-grid">
           <div class="tool-card">
@@ -60,6 +69,16 @@
               Tarifa: <b>$<span id="valor-hora">0</span>/h</b>
             </div>
           </div>
+
+          <div class="tool-card">
+            <h4>Generador IA Ghostwriter</h4>
+            <textarea id="userInput" placeholder="Escribe aquí tu idea para mejorar..."></textarea>
+            <button id="generateBtn">Generar Resultado</button>
+            <div id="resultContainer" class="hidden">
+              <p>Resultado:</p>
+              <div id="output"></div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -69,8 +88,7 @@
     <h3>Roadmap de Desarrollo 2026</h3>
     <ul class="roadmap-list">
       <li class="done">✅ Interfaz y Pasarela PayPal</li>
-      <li class="current">🚀 Integración API Ghostwriter (Próximamente)</li>
-      <li>⏳ Dashboard de Analítica para el Freelancer</li>
+      <li class="current">🚀 Integración API Ghostwriter (Operativa)</li>
     </ul>
   </section>
 </div>
@@ -78,16 +96,12 @@
 <div id="pdf-modal" class="modal hidden">
   <div class="modal-content">
     <span class="close-btn" onclick="cerrarModal()">&times;</span>
-    <div class="modal-header">
-      <h2>La Biblia del Freelancer IA</h2>
-    </div>
-    <div class="modal-body">
-      <h3>Framework R-I-C</h3>
-      <p>Rol + Instrucción + Contexto. Ejemplo: "Actúa como un experto en ventas..."</p>
-      <button class="btn-print" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
-    </div>
+    <h2>La Biblia del Freelancer IA</h2>
+    <p>Framework R-I-C: Rol + Instrucción + Contexto.</p>
+    <button class="btn-print" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
   </div>
 </div>
 
-<script src="https://www.paypal.com/sdk/js?client-id=test&currency=USD"></script>
+<script src="script.js"></script>
+</body>
 </html>
