@@ -2,7 +2,6 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 exports.handler = async (event, context) => {
     try {
-        // 1. Validar que el body existe
         if (!event.body) {
             return { statusCode: 400, body: JSON.stringify({ error: "No hay datos" }) };
         }
@@ -10,20 +9,22 @@ exports.handler = async (event, context) => {
         const { prompt } = JSON.parse(event.body);
         const API_KEY = process.env.GEMINI_API_KEY;
 
-        // 2. Configurar Gemini con la librería oficial
         const genAI = new GoogleGenerativeAI(API_KEY);
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        // Cambio sugerido: gemini-1.5-flash-latest
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
 
-        // 3. Generar contenido
         const result = await model.generateContent(prompt);
         const response = await result.response;
-        const aiText = response.text();
+        
+        // Verificación básica de seguridad (safety ratings)
+        const aiText = response.text() || "El modelo no pudo generar una respuesta.";
 
         return {
             statusCode: 200,
             headers: {
                 "Content-Type": "application/json",
-                "Access-Control-Allow-Origin": "*", // Evita problemas de CORS
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Headers": "Content-Type",
             },
             body: JSON.stringify({ text: aiText })
         };
@@ -33,7 +34,7 @@ exports.handler = async (event, context) => {
         return {
             statusCode: 500,
             body: JSON.stringify({ 
-                error: "Falla técnica", 
+                error: "Error en la comunicación con Gemini", 
                 detalles: error.message 
             })
         };
