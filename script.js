@@ -1,4 +1,4 @@
-// --- 2. MOTOR DE INTELIGENCIA ARTIFICIAL (OPTIMIZADO PARA CLOUDFLARE) ---
+// --- 2. MOTOR DE INTELIGENCIA ARTIFICIAL (CONECTADO A CLOUDFLARE FUNCTIONS) ---
 const btnEjecutar = document.getElementById('generateBtn');
 
 if (btnEjecutar) {
@@ -22,11 +22,11 @@ if (btnEjecutar) {
 
     try {
       /**
-       * IMPORTANTE: En Cloudflare Pages, si no usas Functions, 
-       * deberás llamar directamente a la API o a tu Worker.
-       * He cambiado la ruta de Netlify a una genérica de API.
+       * Al usar Cloudflare Pages Functions, la ruta relativa
+       * debe coincidir con el nombre de tu archivo en la carpeta /functions.
+       * Si tu archivo es /functions/getGhostwriter.js, la ruta es '/getGhostwriter'.
        */
-      const response = await fetch('/api/getGhostwriter', { // Ruta actualizada
+      const response = await fetch('/getGhostwriter', { 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt: texto }) 
@@ -40,6 +40,7 @@ if (btnEjecutar) {
       const data = await response.json();
       
       if (data.text) {
+        // Mostramos el resultado que viene de la IA
         areaSalida.innerText = data.text;
       } else {
         areaSalida.innerText = "La IA no devolvió un resultado claro. Intenta con otra frase.";
@@ -47,9 +48,9 @@ if (btnEjecutar) {
 
     } catch (error) {
       console.error("Error detallado:", error);
-      // MENSAJE CORREGIDO: Sin menciones a Netlify
       areaSalida.innerText = "Lo siento, hubo un fallo en la conexión con el servicio de IA. Inténtalo de nuevo en unos momentos.";
     } finally {
+      // Restauramos el botón
       btnEjecutar.innerText = "Generar Resultado";
       btnEjecutar.disabled = false;
     }
