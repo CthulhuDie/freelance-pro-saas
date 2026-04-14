@@ -15,7 +15,7 @@ function showTab(tabName, event) {
   }
 }
 
-// --- 2. MOTOR DE INTELIGENCIA ARTIFICIAL (CONECTADO A CLOUDFLARE) ---
+// --- 2. MOTOR DE INTELIGENCIA ARTIFICIAL (CLOUDFLARE FUNCTIONS) ---
 const btnEjecutar = document.getElementById('generateBtn');
 
 if (btnEjecutar) {
@@ -60,7 +60,33 @@ if (btnEjecutar) {
   });
 }
 
-// --- 3. FUNCIONES ADICIONALES (CALCULADORA, MODALES, ETC.) ---
+// --- 3. BOTÓN PAYPAL (REINTEGRADO) ---
+if (document.getElementById('paypal-button-container')) {
+  paypal.Buttons({
+    createOrder: (data, actions) => {
+      return actions.order.create({ 
+        purchase_units: [{ amount: { value: '19.00' } }] 
+      });
+    },
+    onApprove: (data, actions) => {
+      return actions.order.capture().then(details => {
+        const statusEl = document.getElementById('payment-status');
+        if (statusEl) statusEl.innerText = "¡Pago verificado! Desbloqueando contenido...";
+        
+        // Simulación de carga antes de mostrar el éxito
+        setTimeout(() => {
+          showTab('success');
+        }, 1500);
+      });
+    },
+    onError: (err) => {
+      console.error("Error en el pago:", err);
+      alert("Hubo un problema con la transacción de PayPal.");
+    }
+  }).render('#paypal-button-container');
+}
+
+// --- 4. CALCULADORA DE TARIFAS ---
 function calcularTarifa() {
   const g = parseFloat(document.getElementById('gastos').value) || 0;
   const a = parseFloat(document.getElementById('ahorro').value) || 0;
@@ -76,5 +102,12 @@ function calcularTarifa() {
   }
 }
 
-function descargarPDF() { document.getElementById('pdf-modal').classList.remove('hidden'); }
-function cerrarModal() { document.getElementById('pdf-modal').classList.add('hidden'); }
+// --- 5. MODAL PDF ---
+function descargarPDF() { 
+  const modal = document.getElementById('pdf-modal');
+  if (modal) modal.classList.remove('hidden'); 
+}
+function cerrarModal() { 
+  const modal = document.getElementById('pdf-modal');
+  if (modal) modal.classList.add('hidden'); 
+}
