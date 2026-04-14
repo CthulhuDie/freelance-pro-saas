@@ -1,6 +1,6 @@
 "scripts": {
   "dev": "next dev",
-  "build": "next build",  <-- ESTA ES LA QUE FALTA
+  "build": "next build",  
   "start": "next start",
   "lint": "next lint"
 }
