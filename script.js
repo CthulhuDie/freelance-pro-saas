@@ -1,3 +1,5 @@
+console.log("Script.js cargado correctamente");
+
 // --- 1. NAVEGACIÓN SPA ---
 function showTab(tabName, event) {
   const sections = ['content-intro', 'content-free', 'content-pay', 'content-success'];
@@ -15,108 +17,96 @@ function showTab(tabName, event) {
   }
 }
 
-// --- 2. MOTOR DE IA (CONECTADO A CLOUDFLARE CON STREAMING) ---
-const btnEjecutar = document.getElementById('generateBtn');
+// --- 2. MOTOR DE IA ---
+document.addEventListener('DOMContentLoaded', () => {
+  const btnEjecutar = document.getElementById('generateBtn');
+  console.log("Buscando botón generateBtn:", btnEjecutar);
 
-if (btnEjecutar) {
-  btnEjecutar.addEventListener('click', async () => {
-    const entradaUsuario = document.getElementById('userInput');
-    const areaSalida = document.getElementById('output');
-    const contenedorResultado = document.getElementById('resultContainer');
-    const texto = entradaUsuario.value.trim();
-    
-    if (!texto || texto.length < 5) {
-      alert("Por favor, ingresa un texto más detallado.");
-      return;
-    }
-
-    // Visual: Cargando
-    btnEjecutar.innerText = "Escribiendo...";
-    btnEjecutar.disabled = true;
-    areaSalida.innerText = ""; // Limpiamos para el efecto de escritura
-    contenedorResultado.classList.remove('hidden');
-
-    try {
-      const response = await fetch('/getGhostwriter', { 
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt: texto }) 
-      });
+  if (btnEjecutar) {
+    btnEjecutar.addEventListener('click', async () => {
+      console.log("¡Click detectado en el botón!");
       
-      if (!response.ok) throw new Error("Error en la conexión con el servidor.");
+      const entradaUsuario = document.getElementById('userInput');
+      const areaSalida = document.getElementById('output');
+      const contenedorResultado = document.getElementById('resultContainer');
+      const texto = entradaUsuario.value.trim();
+      
+      if (!texto || texto.length < 5) {
+        alert("Por favor, ingresa un texto más detallado.");
+        return;
+      }
 
-      // Lógica de lectura de Stream para evitar Timeouts
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let accumulatedText = "";
+      btnEjecutar.innerText = "Escribiendo...";
+      btnEjecutar.disabled = true;
+      areaSalida.innerText = "Cargando respuesta..."; 
+      contenedorResultado.classList.remove('hidden');
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value, { stream: true });
+      try {
+        const response = await fetch('/getGhostwriter', { 
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: texto }) 
+        });
         
-        // --- NUEVA LÓGICA DE PROCESAMIENTO DE TEXTO ---
-        const lines = chunk.split('\n');
-        for (let line of lines) {
-          if (line.includes('"text":')) {
-            try {
-              // Extraemos el contenido de la propiedad text de forma segura
+        if (!response.ok) throw new Error("Error en la conexión");
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let accumulatedText = "";
+        areaSalida.innerText = ""; 
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          const chunk = decoder.decode(value, { stream: true });
+          
+          const lines = chunk.split('\n');
+          for (let line of lines) {
+            if (line.includes('"text":')) {
               const parts = line.split('"text":');
               if (parts[1]) {
-                const content = parts[1]
-                  .split('"')[1] // Toma lo que hay entre las primeras comillas
-                  .replace(/\\n/g, '\n') // Corrige saltos de línea
-                  .replace(/\\"/g, '"'); // Corrige comillas escapadas
-                
+                const content = parts[1].split('"')[1]
+                  .replace(/\\n/g, '\n')
+                  .replace(/\\"/g, '"');
                 accumulatedText += content;
-                areaSalida.innerText = accumulatedText; // Actualización en tiempo real
+                areaSalida.innerText = accumulatedText;
               }
-            } catch (e) {
-              // Si una línea viene incompleta, la ignoramos hasta que llegue el resto
-              console.log("Chunk parcial recibido...");
             }
           }
         }
+      } catch (error) {
+        console.error("Error en Fetch:", error);
+        areaSalida.innerText = "Error: " + error.message;
+      } finally {
+        btnEjecutar.innerText = "Generar Resultado";
+        btnEjecutar.disabled = false;
       }
-
-    } catch (error) {
-      console.error("Error:", error);
-      areaSalida.innerText = "Error: " + error.message;
-    } finally {
-      btnEjecutar.innerText = "Generar Resultado";
-      btnEjecutar.disabled = false;
-    }
-  });
-}
+    });
+  }
+});
 
 // --- 3. PAYPAL ---
-if (document.getElementById('paypal-button-container')) {
-  paypal.Buttons({
-    createOrder: (data, actions) => {
-      return actions.order.create({ purchase_units: [{ amount: { value: '19.00' } }] });
-    },
-    onApprove: (data, actions) => {
-      return actions.order.capture().then(() => {
+window.onload = () => {
+  if (document.getElementById('paypal-button-container')) {
+    paypal.Buttons({
+      createOrder: (data, actions) => actions.order.create({ purchase_units: [{ amount: { value: '19.00' } }] }),
+      onApprove: (data, actions) => actions.order.capture().then(() => {
         alert("¡Pago exitoso!");
         showTab('success');
-      });
-    }
-  }).render('#paypal-button-container');
-}
+      })
+    }).render('#paypal-button-container');
+  }
+};
 
 // --- 4. CALCULADORA ---
 function calcularTarifa() {
   const g = parseFloat(document.getElementById('gastos').value) || 0;
   const a = parseFloat(document.getElementById('ahorro').value) || 0;
   const h = (parseFloat(document.getElementById('horas').value) || 0) * 4;
-  
   if(h > 0) {
     const tarifa = ((g + a) / h) * 1.20;
     document.getElementById('valor-hora').innerText = tarifa.toFixed(2);
     document.getElementById('res-calc').classList.remove('hidden');
-  } else {
-    alert("Ingresa horas semanales válidas.");
   }
 }
 
