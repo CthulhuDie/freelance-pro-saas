@@ -1,4 +1,4 @@
-console.log("Script.js cargado correctamente");
+console.log("Script.js cargado correctamente"); 
 
 // --- 1. NAVEGACIÓN SPA ---
 function showTab(tabName, event) {
