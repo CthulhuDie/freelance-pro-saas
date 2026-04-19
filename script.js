@@ -15,7 +15,7 @@ function showTab(tabName, event) {
   }
 }
 
-// --- 2. MOTOR DE IA (CONECTADO A CLOUDFLARE) ---
+// --- 2. MOTOR DE IA (CONECTADO A CLOUDFLARE CON STREAMING) ---
 const btnEjecutar = document.getElementById('generateBtn');
 
 if (btnEjecutar) {
@@ -33,7 +33,7 @@ if (btnEjecutar) {
     // Visual: Cargando
     btnEjecutar.innerText = "Escribiendo...";
     btnEjecutar.disabled = true;
-    areaSalida.innerText = "Tu Ghostwriter está trabajando...";
+    areaSalida.innerText = ""; // Limpiamos para el efecto de escritura
     contenedorResultado.classList.remove('hidden');
 
     try {
@@ -43,13 +43,30 @@ if (btnEjecutar) {
         body: JSON.stringify({ prompt: texto }) 
       });
       
-      const data = await response.json();
+      if (!response.ok) throw new Error("Error en la conexión con el servidor.");
 
-      if (!response.ok) {
-        throw new Error(data.error || "Error en la conexión");
+      // Lógica de lectura de Stream para evitar Timeouts
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let accumulatedText = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        
+        // Extraemos el texto del JSON parcial que envía Gemini
+        const matches = chunk.matchAll(/"text":\s*"(.*?)"/g);
+        for (const match of matches) {
+          let cleanText = match[1]
+            .replace(/\\n/g, '\n') 
+            .replace(/\\"/g, '"'); 
+          
+          accumulatedText += cleanText;
+          areaSalida.innerText = accumulatedText; // Actualización en tiempo real
+        }
       }
-      
-      areaSalida.innerText = data.text || "La IA no devolvió un resultado.";
 
     } catch (error) {
       console.error("Error:", error);
