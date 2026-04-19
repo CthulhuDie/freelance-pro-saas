@@ -56,15 +56,27 @@ if (btnEjecutar) {
 
         const chunk = decoder.decode(value, { stream: true });
         
-        // Extraemos el texto del JSON parcial que envía Gemini
-        const matches = chunk.matchAll(/"text":\s*"(.*?)"/g);
-        for (const match of matches) {
-          let cleanText = match[1]
-            .replace(/\\n/g, '\n') 
-            .replace(/\\"/g, '"'); 
-          
-          accumulatedText += cleanText;
-          areaSalida.innerText = accumulatedText; // Actualización en tiempo real
+        // --- NUEVA LÓGICA DE PROCESAMIENTO DE TEXTO ---
+        const lines = chunk.split('\n');
+        for (let line of lines) {
+          if (line.includes('"text":')) {
+            try {
+              // Extraemos el contenido de la propiedad text de forma segura
+              const parts = line.split('"text":');
+              if (parts[1]) {
+                const content = parts[1]
+                  .split('"')[1] // Toma lo que hay entre las primeras comillas
+                  .replace(/\\n/g, '\n') // Corrige saltos de línea
+                  .replace(/\\"/g, '"'); // Corrige comillas escapadas
+                
+                accumulatedText += content;
+                areaSalida.innerText = accumulatedText; // Actualización en tiempo real
+              }
+            } catch (e) {
+              // Si una línea viene incompleta, la ignoramos hasta que llegue el resto
+              console.log("Chunk parcial recibido...");
+            }
+          }
         }
       }
 
