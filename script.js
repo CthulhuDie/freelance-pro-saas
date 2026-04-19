@@ -17,8 +17,10 @@ function showTab(tabName, event) {
   }
 }
 
-// --- 2. MOTOR DE IA ---
+// --- TODO LO QUE NECESITA QUE LA PÁGINA ESTÉ LISTA ---
 document.addEventListener('DOMContentLoaded', () => {
+  
+  // --- 2. MOTOR DE IA ---
   const btnEjecutar = document.getElementById('generateBtn');
   console.log("Buscando botón generateBtn:", btnEjecutar);
 
@@ -29,7 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const entradaUsuario = document.getElementById('userInput');
       const areaSalida = document.getElementById('output');
       const contenedorResultado = document.getElementById('resultContainer');
-      const texto = entradaUsuario.value.trim();
+      const texto = (entradaUsuario) ? entradaUsuario.value.trim() : "";
       
       if (!texto || texto.length < 5) {
         alert("Por favor, ingresa un texto más detallado.");
@@ -83,10 +85,8 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
-});
 
-// --- 3. PAYPAL ---
-window.onload = () => {
+  // --- 3. PAYPAL (Metido aquí dentro para evitar conflictos) ---
   if (document.getElementById('paypal-button-container')) {
     paypal.Buttons({
       createOrder: (data, actions) => actions.order.create({ purchase_units: [{ amount: { value: '19.00' } }] }),
@@ -96,9 +96,9 @@ window.onload = () => {
       })
     }).render('#paypal-button-container');
   }
-};
+});
 
-// --- 4. CALCULADORA ---
+// --- 4. CALCULADORA (Fuera porque se llama por onclick) ---
 function calcularTarifa() {
   const g = parseFloat(document.getElementById('gastos').value) || 0;
   const a = parseFloat(document.getElementById('ahorro').value) || 0;
