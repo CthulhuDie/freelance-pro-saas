@@ -104,11 +104,55 @@
     <button class="btn-print" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
   </div>
 </div>
-<script>
-  // ESTO IRÁ DENTRO DEL HTML PARA QUE NO DEPENDA DE ARCHIVOS EXTERNOS
-  console.log("¡POR FIN! El código se está ejecutando desde el HTML");
 
+<script>
+  // --- 1. NAVEGACIÓN ---
+  function showTab(tabName, event) {
+    const sections = ['content-intro', 'content-free', 'content-pay', 'content-success'];
+    sections.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.classList.add('hidden');
+    });
+    const target = document.getElementById('content-' + tabName);
+    if (target) target.classList.remove('hidden');
+    if (event) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      event.currentTarget.classList.add('active');
+    }
+  }
+
+  // --- 2. CALCULADORA ---
+  function calcularTarifa() {
+    const g = parseFloat(document.getElementById('gastos').value) || 0;
+    const a = parseFloat(document.getElementById('ahorro').value) || 0;
+    const h = (parseFloat(document.getElementById('horas').value) || 0) * 4;
+    if(h > 0) {
+      const tarifa = ((g + a) / h) * 1.20;
+      document.getElementById('valor-hora').innerText = tarifa.toFixed(2);
+      document.getElementById('res-calc').classList.remove('hidden');
+    }
+  }
+
+  // --- 3. MODALES ---
+  function descargarPDF() { document.getElementById('pdf-modal').classList.remove('hidden'); }
+  function cerrarModal() { document.getElementById('pdf-modal').classList.add('hidden'); }
+
+  // --- 4. LÓGICA PRINCIPAL ---
   document.addEventListener('DOMContentLoaded', () => {
+    console.log("¡POR FIN! El código se está ejecutando desde el HTML");
+
+    // Inicializar PayPal
+    if (document.getElementById('paypal-button-container')) {
+        paypal.Buttons({
+            createOrder: (data, actions) => actions.order.create({ purchase_units: [{ amount: { value: '19.00' } }] }),
+            onApprove: (data, actions) => actions.order.capture().then(() => {
+                alert("¡Pago exitoso!");
+                showTab('success');
+            })
+        }).render('#paypal-button-container');
+    }
+
+    // Lógica del Generador de IA
     const btnEjecutar = document.getElementById('generateBtn');
     if (btnEjecutar) {
       btnEjecutar.addEventListener('click', async () => {
@@ -117,10 +161,12 @@
         const areaSalida = document.getElementById('output');
         const contenedorResultado = document.getElementById('resultContainer');
         
-        if (!entradaUsuario.value.trim()) return alert("Escribe algo");
+        if (!entradaUsuario.value.trim()) return alert("Por favor, escribe un texto.");
 
         btnEjecutar.innerText = "Escribiendo...";
+        btnEjecutar.disabled = true;
         contenedorResultado.classList.remove('hidden');
+        areaSalida.innerText = "Pensando...";
 
         try {
           const response = await fetch('/getGhostwriter', { 
@@ -128,6 +174,9 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ prompt: entradaUsuario.value }) 
           });
+          
+          if (!response.ok) throw new Error("Error en la conexión");
+
           const reader = response.body.getReader();
           const decoder = new TextDecoder();
           areaSalida.innerText = ""; 
@@ -139,15 +188,22 @@
             const lines = chunk.split('\n');
             for (let line of lines) {
               if (line.includes('"text":')) {
-                const content = line.split('"text":')[1].split('"')[1].replace(/\\n/g, '\n');
-                areaSalida.innerText += content;
+                const parts = line.split('"text":');
+                if (parts[1]) {
+                  const content = parts[1].split('"')[1]
+                    .replace(/\\n/g, '\n')
+                    .replace(/\\"/g, '"');
+                  areaSalida.innerText += content;
+                }
               }
             }
           }
         } catch (e) {
+          console.error(e);
           areaSalida.innerText = "Error: " + e.message;
         } finally {
           btnEjecutar.innerText = "Generar Resultado";
+          btnEjecutar.disabled = false;
         }
       });
     }
