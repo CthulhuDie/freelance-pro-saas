@@ -1,4 +1,4 @@
-console.log("Script.js cargado correctamente"); 
+console.log("¡POR FIN! El código se está ejecutando correctamente");
 
 // --- 1. NAVEGACIÓN SPA ---
 function showTab(tabName, event) {
@@ -17,113 +17,76 @@ function showTab(tabName, event) {
   }
 }
 
-// --- TODO LO QUE NECESITA QUE LA PÁGINA ESTÉ LISTA ---
+// --- 2. LÓGICA PRINCIPAL AL CARGAR EL DOM ---
 document.addEventListener('DOMContentLoaded', () => {
   
-  // --- 2. MOTOR DE IA ---
   const btnEjecutar = document.getElementById('generateBtn');
-  console.log("Buscando botón generateBtn:", btnEjecutar);
 
   if (btnEjecutar) {
     btnEjecutar.addEventListener('click', async () => {
-        console.log("Iniciando petición a la IA...");
-        const entradaUsuario = document.getElementById('userInput');
-        const areaSalida = document.getElementById('output');
-        const contenedorResultado = document.getElementById('resultContainer');
-        
-        if (!entradaUsuario.value.trim()) return alert("Escribe algo para la IA");
+      console.log("Click detectado. Iniciando Ghostwriter...");
+      
+      const entradaUsuario = document.getElementById('userInput');
+      const areaSalida = document.getElementById('output');
+      const contenedorResultado = document.getElementById('resultContainer');
+      
+      const textoPrompt = entradaUsuario.value.trim();
+      
+      if (!textoPrompt) {
+        alert("Por favor, escribe un texto para mejorar.");
+        return;
+      }
 
-        btnEjecutar.innerText = "Escribiendo...";
-        btnEjecutar.disabled = true;
-        contenedorResultado.classList.remove('hidden');
-        areaSalida.innerText = "Conectando con el cerebro de la IA...";
-
-        try {
-          const response = await fetch('/getGhostwriter', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ prompt: entradaUsuario.value })
-          });
-          
-          if (!response.ok) throw new Error("Error en el servidor: " + response.status);
-
-          const reader = response.body.getReader();
-          const decoder = new TextDecoder();
-          areaSalida.innerText = ""; // Limpiamos para empezar a escribir
-
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            
-            const chunk = decoder.decode(value, { stream: true });
-            
-            // PROCESADOR MEJORADO: Busca el texto sin importar cómo venga formateado
-            const lines = chunk.split('\n');
-            for (let line of lines) {
-              if (line.trim() === "") continue;
-              
-              try {
-                // Intentamos extraer el texto si viene como JSON
-                if (line.includes('"text":')) {
-                  const match = line.match(/"text"\s*:\s*"([^"]+)"/);
-                  if (match && match[1]) {
-                    const cleanText = match[1].replace(/\\n/g, '\n').replace(/\\"/g, '"');
-                    areaSalida.innerText += cleanText;
-                  }
-                } else {
-                  // Si no viene como JSON, lo ponemos tal cual (por si acaso)
-                  areaSalida.innerText += line;
-                }
-              } catch (e) {
-                console.log("Error procesando línea, saltando...");
-              }
-            }
-          }
-        } catch (e) {
-          console.error("Error completo:", e);
-          areaSalida.innerText = "Error: " + e.message + ". Revisa que la función de Cloudflare esté desplegada.";
-        } finally {
-          btnEjecutar.innerText = "Generar Resultado";
-          btnEjecutar.disabled = false;
-        }
-      });
+      // Preparar interfaz
+      btnEjecutar.innerText = "Escribiendo...";
+      btnEjecutar.disabled = true;
+      contenedorResultado.classList.remove('hidden');
+      areaSalida.innerText = "Conectando con la IA...";
 
       try {
-        const response = await fetch('/getGhostwriter', { 
+        const response = await fetch('/getGhostwriter', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt: texto }) 
+          body: JSON.stringify({ prompt: textoPrompt })
         });
         
-        if (!response.ok) throw new Error("Error en la conexión");
+        if (!response.ok) throw new Error("Error en el servidor: " + response.status);
 
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
-        let accumulatedText = "";
-        areaSalida.innerText = ""; 
+        areaSalida.innerText = ""; // Limpiar mensaje de espera
 
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
+          
           const chunk = decoder.decode(value, { stream: true });
           
+          // PROCESADOR FLEXIBLE: Captura el texto ignorando el formato JSON si es necesario
           const lines = chunk.split('\n');
           for (let line of lines) {
+            if (line.trim() === "") continue;
+            
+            // Si la línea contiene el campo "text" (formato Gemini)
             if (line.includes('"text":')) {
-              const parts = line.split('"text":');
-              if (parts[1]) {
-                const content = parts[1].split('"')[1]
+              const match = line.match(/"text"\s*:\s*"([^"]+)"/);
+              if (match && match[1]) {
+                const cleanText = match[1]
                   .replace(/\\n/g, '\n')
                   .replace(/\\"/g, '"');
-                accumulatedText += content;
-                areaSalida.innerText = accumulatedText;
+                areaSalida.innerText += cleanText;
               }
+            } 
+            // Si la línea es texto puro y no tiene llaves de JSON
+            else if (!line.includes('{') && !line.includes('}')) {
+              areaSalida.innerText += line.replace(/data:\s*/, "") + " ";
             }
           }
         }
-      } catch (error) {
-        console.error("Error en Fetch:", error);
-        areaSalida.innerText = "Error: " + error.message;
+
+      } catch (e) {
+        console.error("Error en la petición:", e);
+        areaSalida.innerText = "Error: " + e.message;
       } finally {
         btnEjecutar.innerText = "Generar Resultado";
         btnEjecutar.disabled = false;
@@ -131,7 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // --- 3. PAYPAL (Metido aquí dentro para evitar conflictos) ---
+  // --- 3. PAYPAL ---
   if (document.getElementById('paypal-button-container')) {
     paypal.Buttons({
       createOrder: (data, actions) => actions.order.create({ purchase_units: [{ amount: { value: '19.00' } }] }),
@@ -143,7 +106,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 
-// --- 4. CALCULADORA (Fuera porque se llama por onclick) ---
+// --- 4. CALCULADORA ---
 function calcularTarifa() {
   const g = parseFloat(document.getElementById('gastos').value) || 0;
   const a = parseFloat(document.getElementById('ahorro').value) || 0;
