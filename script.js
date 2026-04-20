@@ -24,73 +24,65 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (btnEjecutar) {
     btnEjecutar.addEventListener('click', async () => {
-      console.log("Click detectado. Iniciando Ghostwriter...");
-      
-      const entradaUsuario = document.getElementById('userInput');
-      const areaSalida = document.getElementById('output');
-      const contenedorResultado = document.getElementById('resultContainer');
-      
-      const textoPrompt = entradaUsuario.value.trim();
-      
-      if (!textoPrompt) {
-        alert("Por favor, escribe un texto para mejorar.");
-        return;
-      }
-
-      // Preparar interfaz
-      btnEjecutar.innerText = "Escribiendo...";
-      btnEjecutar.disabled = true;
-      contenedorResultado.classList.remove('hidden');
-      areaSalida.innerText = "Conectando con la IA...";
-
-      try {
-        const response = await fetch('/getGhostwriter', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ prompt: textoPrompt })
-        });
+        const entradaUsuario = document.getElementById('userInput');
+        const areaSalida = document.getElementById('output');
+        const contenedorResultado = document.getElementById('resultContainer');
         
-        if (!response.ok) throw new Error("Error en el servidor: " + response.status);
+        if (!entradaUsuario.value.trim()) return alert("Escribe algo para mejorar");
 
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        areaSalida.innerText = ""; // Limpiar mensaje de espera
+        btnEjecutar.innerText = "Escribiendo...";
+        btnEjecutar.disabled = true;
+        contenedorResultado.classList.remove('hidden');
+        areaSalida.innerText = "Recibiendo datos...";
 
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
+        try {
+          const response = await fetch('/getGhostwriter', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt: entradaUsuario.value })
+          });
           
-          const chunk = decoder.decode(value, { stream: true });
-          
-          // PROCESADOR FLEXIBLE: Captura el texto ignorando el formato JSON si es necesario
-          const lines = chunk.split('\n');
-          for (let line of lines) {
-            if (line.trim() === "") continue;
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          areaSalida.innerText = ""; 
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
             
-            // Si la línea contiene el campo "text" (formato Gemini)
-            if (line.includes('"text":')) {
-              const match = line.match(/"text"\s*:\s*"([^"]+)"/);
-              if (match && match[1]) {
-                const cleanText = match[1]
-                  .replace(/\\n/g, '\n')
-                  .replace(/\\"/g, '"');
-                areaSalida.innerText += cleanText;
+            const chunk = decoder.decode(value, { stream: true });
+            console.log("Chunk recibido:", chunk); // ESTO TE DIRÁ EL SECRETO EN LA CONSOLA
+
+            // PROCESADOR DE TEXTO REFORZADO
+            const lines = chunk.split('\n');
+            for (let line of lines) {
+              if (!line.trim()) continue;
+              
+              // Si viene en formato JSON (Gemini)
+              if (line.includes('"text":')) {
+                const match = line.match(/"text"\s*:\s*"([^"]*)"/);
+                if (match && match[1]) {
+                  const cleanText = match[1]
+                    .replace(/\\n/g, '\n')
+                    .replace(/\\"/g, '"');
+                  areaSalida.innerText += cleanText;
+                }
+              } 
+              // Si viene texto plano o con el prefijo 'data:'
+              else if (!line.startsWith('{')) {
+                const cleanLine = line.replace(/^data:\s*/, "").trim();
+                if (cleanLine) areaSalida.innerText += cleanLine + " ";
               }
-            } 
-            // Si la línea es texto puro y no tiene llaves de JSON
-            else if (!line.includes('{') && !line.includes('}')) {
-              areaSalida.innerText += line.replace(/data:\s*/, "") + " ";
             }
           }
+        } catch (e) {
+          areaSalida.innerText = "Error: " + e.message;
+          console.error("Fallo en la IA:", e);
+        } finally {
+          btnEjecutar.innerText = "Generar Resultado";
+          btnEjecutar.disabled = false;
         }
-
-      } catch (e) {
-        console.error("Error en la petición:", e);
-        areaSalida.innerText = "Error: " + e.message;
-      } finally {
-        btnEjecutar.innerText = "Generar Resultado";
-        btnEjecutar.disabled = false;
-      }
+      });
     });
   }
 
