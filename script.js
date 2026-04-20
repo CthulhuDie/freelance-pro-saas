@@ -26,22 +26,67 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (btnEjecutar) {
     btnEjecutar.addEventListener('click', async () => {
-      console.log("¡Click detectado en el botón!");
-      
-      const entradaUsuario = document.getElementById('userInput');
-      const areaSalida = document.getElementById('output');
-      const contenedorResultado = document.getElementById('resultContainer');
-      const texto = (entradaUsuario) ? entradaUsuario.value.trim() : "";
-      
-      if (!texto || texto.length < 5) {
-        alert("Por favor, ingresa un texto más detallado.");
-        return;
-      }
+        console.log("Iniciando petición a la IA...");
+        const entradaUsuario = document.getElementById('userInput');
+        const areaSalida = document.getElementById('output');
+        const contenedorResultado = document.getElementById('resultContainer');
+        
+        if (!entradaUsuario.value.trim()) return alert("Escribe algo para la IA");
 
-      btnEjecutar.innerText = "Escribiendo...";
-      btnEjecutar.disabled = true;
-      areaSalida.innerText = "Cargando respuesta..."; 
-      contenedorResultado.classList.remove('hidden');
+        btnEjecutar.innerText = "Escribiendo...";
+        btnEjecutar.disabled = true;
+        contenedorResultado.classList.remove('hidden');
+        areaSalida.innerText = "Conectando con el cerebro de la IA...";
+
+        try {
+          const response = await fetch('/getGhostwriter', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt: entradaUsuario.value })
+          });
+          
+          if (!response.ok) throw new Error("Error en el servidor: " + response.status);
+
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          areaSalida.innerText = ""; // Limpiamos para empezar a escribir
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            
+            const chunk = decoder.decode(value, { stream: true });
+            
+            // PROCESADOR MEJORADO: Busca el texto sin importar cómo venga formateado
+            const lines = chunk.split('\n');
+            for (let line of lines) {
+              if (line.trim() === "") continue;
+              
+              try {
+                // Intentamos extraer el texto si viene como JSON
+                if (line.includes('"text":')) {
+                  const match = line.match(/"text"\s*:\s*"([^"]+)"/);
+                  if (match && match[1]) {
+                    const cleanText = match[1].replace(/\\n/g, '\n').replace(/\\"/g, '"');
+                    areaSalida.innerText += cleanText;
+                  }
+                } else {
+                  // Si no viene como JSON, lo ponemos tal cual (por si acaso)
+                  areaSalida.innerText += line;
+                }
+              } catch (e) {
+                console.log("Error procesando línea, saltando...");
+              }
+            }
+          }
+        } catch (e) {
+          console.error("Error completo:", e);
+          areaSalida.innerText = "Error: " + e.message + ". Revisa que la función de Cloudflare esté desplegada.";
+        } finally {
+          btnEjecutar.innerText = "Generar Resultado";
+          btnEjecutar.disabled = false;
+        }
+      });
 
       try {
         const response = await fetch('/getGhostwriter', { 
