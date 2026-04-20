@@ -20,20 +20,17 @@ function showTab(tabName, event) {
 // --- 2. LÓGICA PRINCIPAL AL CARGAR EL DOM ---
 document.addEventListener('DOMContentLoaded', () => {
   
-  const btnEjecutar = document.getElementById('generateBtn');
-
-  if (btnEjecutar) {
-    btnEjecutar.addEventListener('click', async () => {
+  btnEjecutar.addEventListener('click', async () => {
         const entradaUsuario = document.getElementById('userInput');
         const areaSalida = document.getElementById('output');
         const contenedorResultado = document.getElementById('resultContainer');
         
-        if (!entradaUsuario.value.trim()) return alert("Escribe algo para mejorar");
+        if (!entradaUsuario.value.trim()) return alert("Escribe algo primero");
 
-        btnEjecutar.innerText = "Escribiendo...";
+        btnEjecutar.innerText = "IA Procesando...";
         btnEjecutar.disabled = true;
         contenedorResultado.classList.remove('hidden');
-        areaSalida.innerText = "Recibiendo datos...";
+        areaSalida.innerText = "Esperando respuesta del servidor...";
 
         try {
           const response = await fetch('/getGhostwriter', {
@@ -44,46 +41,35 @@ document.addEventListener('DOMContentLoaded', () => {
           
           const reader = response.body.getReader();
           const decoder = new TextDecoder();
-          areaSalida.innerText = ""; 
+          areaSalida.innerText = ""; // Limpiar el "Esperando..."
 
           while (true) {
             const { done, value } = await reader.read();
             if (done) break;
             
             const chunk = decoder.decode(value, { stream: true });
-            console.log("Chunk recibido:", chunk); // ESTO TE DIRÁ EL SECRETO EN LA CONSOLA
+            console.log("DATOS CRUDOS:", chunk);
 
-            // PROCESADOR DE TEXTO REFORZADO
-            const lines = chunk.split('\n');
-            for (let line of lines) {
-              if (!line.trim()) continue;
-              
-              // Si viene en formato JSON (Gemini)
-              if (line.includes('"text":')) {
-                const match = line.match(/"text"\s*:\s*"([^"]*)"/);
-                if (match && match[1]) {
-                  const cleanText = match[1]
-                    .replace(/\\n/g, '\n')
-                    .replace(/\\"/g, '"');
-                  areaSalida.innerText += cleanText;
+            // Intentamos limpiar la basura de JSON si existe, pero si no, mostramos el texto tal cual
+            if (chunk.includes('"text":')) {
+                const match = chunk.match(/"text"\s*:\s*"([^"]+)"/);
+                if (match) {
+                    areaSalida.innerText += match[1].replace(/\\n/g, '\n').replace(/\\"/g, '"');
+                } else {
+                    areaSalida.innerText += chunk;
                 }
-              } 
-              // Si viene texto plano o con el prefijo 'data:'
-              else if (!line.startsWith('{')) {
-                const cleanLine = line.replace(/^data:\s*/, "").trim();
-                if (cleanLine) areaSalida.innerText += cleanLine + " ";
-              }
+            } else {
+                // Si llega texto plano o algo que no entendemos, lo tiramos a la pantalla
+                areaSalida.innerText += chunk.replace(/data:|{|}|"|\[|\]/g, "");
             }
           }
         } catch (e) {
-          areaSalida.innerText = "Error: " + e.message;
-          console.error("Fallo en la IA:", e);
+          areaSalida.innerText = "¡UPS! Algo salió mal: " + e.message;
         } finally {
           btnEjecutar.innerText = "Generar Resultado";
           btnEjecutar.disabled = false;
         }
       });
-    });
   }
 
   // --- 3. PAYPAL ---
