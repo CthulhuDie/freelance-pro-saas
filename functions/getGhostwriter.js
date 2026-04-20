@@ -22,12 +22,13 @@ export async function onRequestPost(context) {
 
     // 2. RETORNAR EL CUERPO COMO STREAM DIRECTO
     // Esto mantiene la conexión viva y evita el timeout de Cloudflare
-    return new Response(response.body, {
-      headers: { 
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache"
-      }
-    });
+    return new Response(stream, {
+  headers: { 
+    "Content-Type": "text/event-stream", // O "application/json"
+    "Cache-Control": "no-cache",
+    "Connection": "keep-alive"
+  }
+});
 
   } catch (error) {
     return new Response(JSON.stringify({ error: "Error de servidor: " + error.message }), { status: 500 });
