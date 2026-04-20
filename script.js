@@ -25,12 +25,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const areaSalida = document.getElementById('output');
         const contenedorResultado = document.getElementById('resultContainer');
         
-        if (!entradaUsuario.value.trim()) return alert("Escribe algo primero");
+        if (!entradaUsuario.value.trim()) return alert("Escribe algo para la IA");
 
-        btnEjecutar.innerText = "IA Procesando...";
+        btnEjecutar.innerText = "Escribiendo...";
         btnEjecutar.disabled = true;
         contenedorResultado.classList.remove('hidden');
-        areaSalida.innerText = "Esperando respuesta del servidor...";
+        areaSalida.innerText = "Recibiendo respuesta...";
 
         try {
           const response = await fetch('/getGhostwriter', {
@@ -41,30 +41,35 @@ document.addEventListener('DOMContentLoaded', () => {
           
           const reader = response.body.getReader();
           const decoder = new TextDecoder();
-          areaSalida.innerText = ""; // Limpiar el "Esperando..."
+          areaSalida.innerText = ""; 
 
           while (true) {
             const { done, value } = await reader.read();
             if (done) break;
             
             const chunk = decoder.decode(value, { stream: true });
-            console.log("DATOS CRUDOS:", chunk);
+            
+            // --- PROCESADOR ULTRA-POTENTE ---
+            // Buscamos cualquier cosa que esté dentro de comillas después de "text":
+            const regex = /"text"\s*:\s*"([^"]+)"/g;
+            let match;
+            
+            while ((match = regex.exec(chunk)) !== null) {
+              let textoLimpio = match[1]
+                .replace(/\\n/g, '\n')  // Arregla saltos de línea
+                .replace(/\\"/g, '"')   // Arregla comillas internas
+                .replace(/\\u[0-9a-fA-F]{4}/g, (m) => String.fromCharCode(parseInt(m.substr(2), 16))); // Arregla tildes
+              
+              areaSalida.innerText += textoLimpio;
+            }
 
-            // Intentamos limpiar la basura de JSON si existe, pero si no, mostramos el texto tal cual
-            if (chunk.includes('"text":')) {
-                const match = chunk.match(/"text"\s*:\s*"([^"]+)"/);
-                if (match) {
-                    areaSalida.innerText += match[1].replace(/\\n/g, '\n').replace(/\\"/g, '"');
-                } else {
-                    areaSalida.innerText += chunk;
-                }
-            } else {
-                // Si llega texto plano o algo que no entendemos, lo tiramos a la pantalla
-                areaSalida.innerText += chunk.replace(/data:|{|}|"|\[|\]/g, "");
+            // Si por alguna razón el regex falla pero hay texto plano (no JSON)
+            if (!chunk.includes('{') && chunk.length > 5) {
+              areaSalida.innerText += chunk.replace(/data:\s*/, "");
             }
           }
         } catch (e) {
-          areaSalida.innerText = "¡UPS! Algo salió mal: " + e.message;
+          areaSalida.innerText = "Error crítico: " + e.message;
         } finally {
           btnEjecutar.innerText = "Generar Resultado";
           btnEjecutar.disabled = false;
