@@ -22,9 +22,10 @@ export async function onRequestPost(context) {
 
     // 2. RETORNAR EL CUERPO COMO STREAM DIRECTO
     // Esto mantiene la conexión viva y evita el timeout de Cloudflare
-    return new Response(stream, {
+    // Dentro de tu archivo functions/getGhostwriter.js
+return new Response(stream, {
   headers: { 
-    "Content-Type": "text/event-stream", // O "application/json"
+    "Content-Type": "text/event-stream", 
     "Cache-Control": "no-cache",
     "Connection": "keep-alive"
   }
