@@ -1,37 +1,38 @@
-export async function onRequestPost(context) {
+async function generateText(userPrompt) {
   try {
-    const { prompt } = await context.request.json();
-    const API_KEY = context.env.GEMINI_API_KEY;
-
-    if (!API_KEY) {
-      return new Response(JSON.stringify({ error: "API Key no configurada" }), { status: 500 });
-    }
-
-    // 1. CAMBIO A ENDPOINT DE STREAMING
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:streamGenerateContent?key=${API_KEY}`;
-    
-    const response = await fetch(url, {
+    const response = await fetch("/api/ghostwriter", { // Ajusta la ruta a tu worker
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{
-          parts: [{ text: `Actúa como un Ghostwriter experto para freelancers. Mejora profesionalmente este texto: "${prompt}"` }]
-        }]
-      })
+      body: JSON.stringify({ prompt: userPrompt }),
     });
 
-    // 2. RETORNAR EL CUERPO COMO STREAM DIRECTO
-    // Esto mantiene la conexión viva y evita el timeout de Cloudflare
-    // Dentro de tu archivo functions/getGhostwriter.js
-return new Response(stream, {
-  headers: { 
-    "Content-Type": "text/event-stream", 
-    "Cache-Control": "no-cache",
-    "Connection": "keep-alive"
-  }
-});
+    if (!response.ok) throw new Error("Error en la petición");
+
+    // 1. Preparamos el lector del stream
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let fullText = "";
+
+    // 2. Bucle para leer cada trozo (chunk)
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      // Convertimos el buffer a texto
+      const chunk = decoder.decode(value, { stream: true });
+      
+      // NOTA: Gemini en modo stream devuelve objetos JSON por cada trozo.
+      // Dependiendo de cómo lo manejes, podrías necesitar limpiar el texto:
+      console.log("Trozo recibido:", chunk);
+      
+      // Aquí actualizarías tu estado (ej: setTexto(prev => prev + chunk))
+      fullText += chunk; 
+      // Si usas React: setOutput(fullText);
+    }
+
+    console.log("Lectura completada");
 
   } catch (error) {
-    return new Response(JSON.stringify({ error: "Error de servidor: " + error.message }), { status: 500 });
+    console.error("Fallo en el frontend:", error);
   }
 }
