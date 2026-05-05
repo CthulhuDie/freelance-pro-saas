@@ -1,1 +1,37 @@
+// src/services/project.service.ts
+import { db } from "@/lib/db"; 
 
+export class ProjectService {
+  /**
+   * Obtiene todos los proyectos de un freelancer
+   */
+  static async getProjectsByUser(userId: string) {
+    return await db.project.findMany({
+      where: { userId },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
+  /**
+   * Crea un nuevo proyecto con validación inicial
+   */
+  static async createProject(data: { title: string; description?: string; userId: string }) {
+    // Aquí puedes añadir lógica de negocio, ej: verificar límite de proyectos
+    return await db.project.create({
+      data: {
+        ...data,
+        status: "PENDING",
+      },
+    });
+  }
+
+  /**
+   * Obtiene un proyecto específico por ID
+   */
+  static async getProjectById(projectId: string) {
+    return await db.project.findUnique({
+      where: { id: projectId },
+      include: { tasks: true } // Si tienes tareas relacionadas
+    });
+  }
+}
